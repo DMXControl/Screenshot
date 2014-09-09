@@ -6,6 +6,10 @@
 PROGRAMNAME = DMXControl Screenshot
 debug := false
 
+Menu, Tray, Icon, DMXControlScreenshot.ico
+
+get_configuration()
+
 selectedCategory := Object()
 
 if(pictures_list_get())
@@ -29,9 +33,10 @@ SelectCategory:
 
 	categories := pictures_list_headers(Join("\n", selectedCategory*))
 
+	gui, new, , % PROGRAMNAME
 	if(categories.MaxIndex() > 0)
 	{
-		gui, add, text,, Select category for images
+		gui, add, text, W500, Select category for images
 		gui, add, text,, % Join(" -> ", selectedCategory*)
 
 		for key, category in categories
@@ -39,13 +44,22 @@ SelectCategory:
 	}
 	else
 	{
-		gui, add, text,, Select image to update
+		gui, add, text, W500, Select image to update
 		gui, add, text,, % Join(" -> ", selectedCategory*)
 
 		for key, image in pictures_list_images()
-			gui, add, button, gUpdateImage, %image%
+		{
+			timestamp := picture_get_timestamp(image)
+			FormatTime, description, % timestamp, yyyy-MM-dd HH:mm
+			days := timestamp
+			EnvSub, days, %A_Now%, days
+			days *= -1
+			
+			gui, add, button, X10 W300 gUpdateImage, %image%
+			gui, add, text, xp+320 yp+4, %description%; %days% days ago
+		}
 	}
-	gui, add, button, gExit, Cancel
+	gui, add, button, X410 W100 gExit, Exit
 	gui, show, ; for other 'generic' system
 
 return
@@ -68,7 +82,30 @@ Join(sep, params*) {
 
 get_configuration()
 {	
-	return false
+	global ; all created wariables are global per default
+	local inifile 
+	inifile = configuration_%A_ComputerName%.ini ; the name of the file for config info
+	
+	local configuration_values := []
+	configuration_values.Insert(["dmxcontrol_path", "Path to your DMXControl 3 installation, e.g. »C:\Programme\DMXControl3.0«"])
+	configuration_values.Insert(["wiki_username", "Your DMXControl Active Directory username"])
+	
+	local key, params, config, description
+	for key, params in configuration_values
+	{
+		config := params[1]
+		description := params[2]
+		
+		IniRead, config_%config% , %inifile%, DMXControlScreenshot, % config
+		
+		if(config_%config% == "ERROR" || config_%config% == "")
+		{
+			InputBox, config_%config%, % PROGRAMNAME, Please enter following value:`n%description%
+			IniWrite, % config_%config% , %inifile%, DMXControlScreenshot, % config
+		}
+	}
+	
+	return true
 }
 
 pictures_date = ""
@@ -110,7 +147,7 @@ pictures_list_get()
 			break
 		}
 		
-		pictures_date := first["touched"] ; TODO: better format
+		pictures_date := RegExReplace(first["touched"], "[^\d]")
 		
 		pictures_list := first["revisions"][1]["*"]
 
@@ -194,4 +231,52 @@ pictures_list_images()
 	}
 	
 	return images
+}
+
+picture_get_timestamp(filename)
+{
+	http_path = http://www.dmxcontrol.de/mediawiki/api.php?format=json&action=query&titles=File:%filename%&prop=revisions|info&rvprop=timestamp
+	
+	if(!debug)
+	{
+		WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		WebRequest.Open("GET", http_path)
+		WebRequest.Send()
+	}
+	else
+	{
+		return 2014-09-09
+	}
+
+
+	if(WebRequest.Status == 200 || debug)
+	{
+		if(!debug)
+		{
+			picture_json := WebRequest.ResponseText
+			WebRequest = ""
+		}
+
+
+		j := JSON_from(picture_json)
+		
+		for key, value in j["query"]["pages"]
+		{
+			first := value
+			break
+		}
+				
+		time_string := RegExReplace(first["revisions"][1]["timestamp"], "[^\d]")
+		
+		EnvAdd, time, time_string
+		
+		return time
+
+	}
+	else
+	{
+		; TODO
+		WebRequest = ""
+		return false
+	}
 }
