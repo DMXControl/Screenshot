@@ -56,7 +56,8 @@ SelectCategory:
 			days *= -1
 			
 			gui, add, button, X10 W300 gUpdateImage, %image%
-			gui, add, text, xp+320 yp+4, %description%; %days% days ago
+			gui, add, button, xp+310 W20 gOpenWikiFile v%key%, W
+			gui, add, text, xp+30 yp+4, %description%; %days% days ago
 		}
 	}
 	gui, add, button, X410 W100 gExit, Exit
@@ -71,6 +72,12 @@ UpdateImage:
 	MsgBox % "Logic missing for auto generate image " . selected_image
 	
 	Goto Exit
+return
+
+OpenWikiFile:
+	images := pictures_list_images()
+	file := images[A_GuiControl]
+	Run http://www.dmxcontrol.de/wiki/File:%file%
 return
 
 
