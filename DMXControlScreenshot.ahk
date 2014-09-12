@@ -10,19 +10,16 @@ debug := false
 Menu, Tray, Icon, DMXControlScreenshot.ico
 
 configuration_get()
-software_list_get()
+if(software_list_get())
+{
+	MsgBox, 16, %PROGRAMNAME%, Couldn't get software info list from Wiki. `nAre you sure that your computer is connected to the internet and DMXControl Wiki is up and running?
+}
 
 Restart:
 selectedCategory := Object()
+pictures_list_get()
 
-if(pictures_list_get())
-{
-	goto SelectCategory
-}
-else
-{
-	MsgBox, 16, %PROGRAMNAME%, Couldn't get picture list from Wiki. `nAre you sure that your computer is connected to the internet and DMXControl Wiki is up and running?
-}
+goto SelectCategory
 
 Exit:
 ExitApp
