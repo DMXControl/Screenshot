@@ -10,10 +10,14 @@ debug := false
 Menu, Tray, Icon, DMXControlScreenshot.ico
 
 configuration_get()
-if(software_list_get())
+if(!software_list_get())
 {
 	MsgBox, 16, %PROGRAMNAME%, Couldn't get software info list from Wiki. `nAre you sure that your computer is connected to the internet and DMXControl Wiki is up and running?
+	
+	goto Exit
 }
+
+environment_prepare(true)
 
 Restart:
 selectedCategory := Object()
@@ -22,6 +26,7 @@ pictures_list_get()
 goto SelectCategory
 
 Exit:
+environment_prepare(false)
 ExitApp
 
 SelectCategory:
@@ -364,5 +369,61 @@ software_version_assume(software, version, filedate)
 	else
 	{
 		return
+	}
+}
+
+environment_prepare(startup)
+{
+	global PROGRAMNAME
+	
+	if(startup)
+	{
+		while(DMXControl_running())
+		{
+			MsgBox, 6, %PROGRAMNAME%, You have an instance of DMXControl 3 running.`nIt has to be closed before we can continue!, 10
+			IfMsgBox Cancel
+				ExitApp ; intentionally no goto exit, because this would "restore" some things that weren't done
+			IfMsgBox Continue
+				break
+		}
+		If(DMXControl_running())
+		{
+			DMXControl_close()
+		}
+		
+		FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, R
+	}
+	else
+	{
+		FileRemoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, 1
+		FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, %A_AppData%\DMXControl Projects e.V\DMXControl\, R 
+	}
+}
+DMXControl_running()
+{
+	Process, Exist, LumosGUI.exe
+	if(!ErrorLevel)
+		Process, Exist, Lumos.exe
+	return ErrorLevel
+}
+
+DMXControl_close()
+{
+	Process, Exist, LumosGUI.exe
+	if(ErrorLevel)
+	{
+		WinActivate, DMXControl 3
+		WinClose, DMXControl 3, , 30
+		Process, WaitClose, LumosGUI.exe, 15 ; to give LumosGUI.exe a chance, to show the kernel window
+		Process, Close, LumosGUI.exe
+		Process, WaitClose, LumosGUI.exe, 15
+	}
+	
+	Process, Exist, Lumos.exe
+	if(ErrorLevel)
+	{
+		WinClose, DMXControl Kernel, , 30
+		Process, Close, Lumos.exe ; should only be used, if window can't be closed - but it might be that kernel doesn't have a window
+		Process, WaitClose, Lumos.exe, 15
 	}
 }
