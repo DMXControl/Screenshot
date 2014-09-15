@@ -108,7 +108,7 @@ configuration_get()
 	inifile = configuration_%A_ComputerName%.ini ; the name of the file for config info
 	
 	local configuration_values := []
-	configuration_values.Insert(["dmxcontrol_path", "Path to your DMXControl 3 installation, e.g. »C:\Programme\DMXControl3.0«"])
+	configuration_values.Insert(["dmxcontrol_path", "Path to your DMXControl 3 installation, e.g. »C:\Programme\DMXControl3.0« without trailing backslash."])
 	configuration_values.Insert(["wiki_username", "Your DMXControl Active Directory username"])
 	
 	local key, params, config, description
@@ -426,4 +426,45 @@ DMXControl_close()
 		Process, Close, Lumos.exe ; should only be used, if window can't be closed - but it might be that kernel doesn't have a window
 		Process, WaitClose, Lumos.exe, 15
 	}
+}
+DMXControl_start_kernel()
+{
+	global PROGRAMNAME, config_dmxcontrol_path
+	
+	Process, Exist, Lumos.exe
+	if(ErrorLevel)
+	{ ; Kernel already running
+		return true
+	}
+	
+	Run, %config_dmxcontrol_path%\Kernel\Lumos.exe
+	WinWait, DMXControl Kernel, , 60
+	WinActivate, DMXControl Kernel
+	; TODO: Position window accordingly
+	
+	MsgBox, 33, %PROGRAMNAME%, Please press OK if Kernel is fully started up. ; sadly can't do that automatically
+	IfMsgBox OK
+		return true
+	else
+		return false
+}
+
+DMXControl_start_gui()
+{
+	global PROGRAMNAME, config_dmxcontrol_path
+	
+	Process, Exist, LumosGUI.exe
+	if(ErrorLevel)
+	{ ; GUI already running
+		return true
+	}
+	
+	Run, %config_dmxcontrol_path%\GUI\LumosGUI.exe -nonetwork
+	WinWait, DMXControl 3, , 60
+	WinActivate, DMXControl 3
+	; TODO: Position window accordingly
+	
+	MsgBox Done
+	
+	return true
 }
