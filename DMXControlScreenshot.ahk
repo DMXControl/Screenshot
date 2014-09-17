@@ -1,13 +1,13 @@
-#include lib_JSON.ahk
+#include include\lib_JSON.ahk
 #EscapeChar `
 #CommentFlag ;
-#include lib_GuiButtonIcon.ahk
+#include include\lib_GuiButtonIcon.ahk
 #singleinstance force 
 
 PROGRAMNAME = DMXControl Screenshot
 debug := false
 
-Menu, Tray, Icon, DMXControlScreenshot.ico
+Menu, Tray, Icon, include\DMXControlScreenshot.dll, 1
 
 configuration_get()
 if(!software_list_get())
@@ -64,7 +64,7 @@ SelectCategory:
 			
 			gui, add, button, X10 W300 Left gUpdateImage, %image%
 			gui, add, button, xp+310 W24 gOpenWikiFile v%key% hwndIcon
-			GuiButtonIcon(Icon, "link.ico")
+			GuiButtonIcon(Icon, "include\DMXControlScreenshot.dll", 2)
 			gui, add, text, xp+34 yp+4 W150, %description%, %days% days ago
 			
 			software := StrSplit(selectedCategory[1], " ")
