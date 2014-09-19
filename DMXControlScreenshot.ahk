@@ -2,6 +2,7 @@
 #EscapeChar `
 #CommentFlag ;
 #include include\lib_GuiButtonIcon.ahk
+#include include\lib_Gdip.ahk
 #singleinstance force 
 
 PROGRAMNAME = DMXControl Screenshot
@@ -494,4 +495,23 @@ RunAsAdmin() {
          DllCall(ShellExecute, uint, 0, str, "RunAs", str, A_AhkPath, str, """" . A_ScriptFullPath . """" . A_Space . params, str, A_WorkingDir, int, 1)
       ExitApp
   }
+}
+
+Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename without extension
+{	
+	If !pToken := Gdip_Startup()
+	{
+		MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
+		return false
+	}
+
+	pBitmap := Gdip_BitmapFromScreen(pos_x . "|" . pos_y . "|" . pos_width . "|" . pos_height, "")
+	
+	FileCreateDir, screenshots
+	FileDelete, "screenshots\" . filename . ".png"
+	Gdip_SaveBitmapToFile(pBitmap, "screenshots\" . filename . ".png")
+
+	Gdip_DisposeImage(pBitmap)
+
+	Gdip_Shutdown(pToken)
 }
