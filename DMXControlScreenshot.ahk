@@ -468,3 +468,25 @@ DMXControl_start_gui()
 	
 	return true
 }
+
+Check_OS(required_os, force) ; allowed values: WIN_7, WIN_8, WIN_8.1, WIN_VISTA, WIN_2003, WIN_XP, WIN_2000
+{
+	if(A_OSVersion == required_os)
+	{
+		return true
+	}
+	else
+	{
+		if(force)
+		{
+			return false
+		}
+		else
+		{
+			MsgBox, 4, prog, Required OS is %required_os%`, but you have %A_OSVersion% running. Screenshot might not fit design guide. Continue anyways?
+			IfMsgBox Yes
+				return true
+			IfMsgBox No
+				return false
+		}
+}
