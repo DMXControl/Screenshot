@@ -2,6 +2,7 @@
 #EscapeChar `
 #CommentFlag ;
 #include include\lib_GuiButtonIcon.ahk
+#include include\lib_Gdip.ahk
 #singleinstance force 
 
 PROGRAMNAME = DMXControl Screenshot
@@ -9,7 +10,10 @@ debug := false
 
 Menu, Tray, Icon, include\DMXControlScreenshot.dll, 1
 
+RunAsAdmin() ; because we ned admin rights for some actions we will make
+
 configuration_get()
+
 if(!software_list_get())
 {
 	MsgBox, 16, %PROGRAMNAME%, Couldn't get software info list from Wiki. `nAre you sure that your computer is connected to the internet and DMXControl Wiki is up and running?
@@ -374,10 +378,16 @@ software_version_assume(software, version, filedate)
 
 environment_prepare(startup)
 {
-	global PROGRAMNAME
+	global PROGRAMNAME, GdipToken
 	
 	if(startup)
 	{
+		If !GdipToken := Gdip_Startup()
+		{
+			MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
+			ExitApp
+		}
+		
 		while(DMXControl_running())
 		{
 			MsgBox, 6, %PROGRAMNAME%, You have an instance of DMXControl 3 running.`nIt has to be closed before we can continue!, 10
@@ -397,6 +407,8 @@ environment_prepare(startup)
 	{
 		FileRemoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, 1
 		FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, %A_AppData%\DMXControl Projects e.V\DMXControl\, R 
+		Gdip_Shutdown(pToken)
+
 	}
 }
 DMXControl_running()
@@ -489,4 +501,42 @@ Check_OS(required_os, force) ; allowed values: WIN_7, WIN_8, WIN_8.1, WIN_VISTA,
 			IfMsgBox No
 				return false
 		}
+	}
+}
+
+Windows_Firewall_RemoveDMXControl()
+{
+	Run, netsh advfirewall firewall delete rule name="DMXControl 3 Kernel"
+	Run, netsh advfirewall firewall delete rule name="DMXControl 3 GUI"
+}
+
+RunAsAdmin() {
+  Loop, %0%  ; For each parameter:
+    {
+      param := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.
+      params .= A_Space . param
+    }
+  ShellExecute := A_IsUnicode ? "shell32\ShellExecute":"shell32\ShellExecuteA"
+      
+  if not A_IsAdmin
+  {
+      If A_IsCompiled
+         DllCall(ShellExecute, uint, 0, str, "RunAs", str, A_ScriptFullPath, str, params , str, A_WorkingDir, int, 1)
+      Else
+         DllCall(ShellExecute, uint, 0, str, "RunAs", str, A_AhkPath, str, """" . A_ScriptFullPath . """" . A_Space . params, str, A_WorkingDir, int, 1)
+      ExitApp
+  }
+}
+
+Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename without extension
+{	
+	global GdipToken
+
+	pBitmap := Gdip_BitmapFromScreen(pos_x . "|" . pos_y . "|" . pos_width . "|" . pos_height, "")
+	
+	FileCreateDir, screenshots
+	FileDelete, "screenshots\" . filename . ".png"
+	Gdip_SaveBitmapToFile(pBitmap, "screenshots\" . filename . ".png")
+
+	Gdip_DisposeImage(pBitmap)
 }
