@@ -378,10 +378,16 @@ software_version_assume(software, version, filedate)
 
 environment_prepare(startup)
 {
-	global PROGRAMNAME
+	global PROGRAMNAME, GdipToken
 	
 	if(startup)
 	{
+		If !GdipToken := Gdip_Startup()
+		{
+			MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
+			ExitApp
+		}
+		
 		while(DMXControl_running())
 		{
 			MsgBox, 6, %PROGRAMNAME%, You have an instance of DMXControl 3 running.`nIt has to be closed before we can continue!, 10
@@ -401,6 +407,8 @@ environment_prepare(startup)
 	{
 		FileRemoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, 1
 		FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, %A_AppData%\DMXControl Projects e.V\DMXControl\, R 
+		Gdip_Shutdown(pToken)
+
 	}
 }
 DMXControl_running()
@@ -499,11 +507,7 @@ RunAsAdmin() {
 
 Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename without extension
 {	
-	If !pToken := Gdip_Startup()
-	{
-		MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
-		return false
-	}
+	global GdipToken
 
 	pBitmap := Gdip_BitmapFromScreen(pos_x . "|" . pos_y . "|" . pos_width . "|" . pos_height, "")
 	
@@ -512,6 +516,4 @@ Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename w
 	Gdip_SaveBitmapToFile(pBitmap, "screenshots\" . filename . ".png")
 
 	Gdip_DisposeImage(pBitmap)
-
-	Gdip_Shutdown(pToken)
 }
