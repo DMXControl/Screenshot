@@ -410,6 +410,8 @@ environment_prepare(startup)
 		Gdip_Shutdown(pToken)
 
 	}
+	
+	Windows_prepare_style(startup)
 }
 DMXControl_running()
 {
@@ -539,4 +541,29 @@ Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename w
 	Gdip_SaveBitmapToFile(pBitmap, "screenshots\" . filename . ".png")
 
 	Gdip_DisposeImage(pBitmap)
+}
+
+Windows_HideDesktopIcons(hide_them)
+{
+	ControlGet, HWND, Hwnd,, SysListView321, ahk_class Progman
+	If HWND =
+		ControlGet, HWND, Hwnd,, SysListView321, ahk_class WorkerW
+	If hide_them
+		WinHide, ahk_id %HWND%
+	Else
+		WinShow, ahk_id %HWND%
+}
+
+Windows_prepare_style(startup)
+{
+	if(startup)
+	{
+		Run, include\DMXC2_Manual_Manual_WindowsDesign.themepack
+	}
+	else
+	{
+		Run, include\Windows 7 default.themepack
+	}
+
+	Windows_HideDesktopIcons(startup)
 }
