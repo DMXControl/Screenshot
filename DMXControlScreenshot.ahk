@@ -6,11 +6,12 @@
 #singleinstance force 
 
 PROGRAMNAME = DMXControl Screenshot
-debug := false
+debug_internet := false
+skip_intensive_windows_stuff := false
 
 Menu, Tray, Icon, include\DMXControlScreenshot.dll, 1
 
-RunAsAdmin() ; because we ned admin rights for some actions we will make
+RunAsAdmin() ; because we need admin rights for some actions we will make
 
 configuration_get()
 
@@ -136,9 +137,9 @@ configuration_get()
 pictures_list_get()
 {
 	global pictures_list, pictures_date
-	global debug
+	global debug_internet
 
-	if(debug)
+	if(debug_internet)
 	{
 		pictures_json = {"query":{"pages":{"3375":{"pageid":3375,"ns":0,"title":"Liste DMXControl 3 Handbuch Bilder","revisions":[{"*":"Diese Seite stellt eine \u00dcbersicht <!-- aller --> der im DMXControl 3 Dokumentation verwendeten Bilder dar.\n\n= DMXControl 3.0 Lumos =\n== Tutorial ==\n=== Lektion 3 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L02_PanelAssignment.jpg\nDatei:DMXC30_WindowsManager3.JPG\n<\/gallery>\n\n\n== Handbuch ==\n=== Wrong entry ==="}],"touched":"2014-09-08T12:25:34Z","lastrevid":11974,"counter":7,"length":290}}}}
 	}
@@ -152,9 +153,9 @@ pictures_list_get()
 		WebRequest.Send()
 	}
 
-	if(WebRequest.Status == 200 || debug)
+	if(WebRequest.Status == 200 || debug_internet)
 	{
-		if(!debug)
+		if(!debug_internet)
 		{
 			pictures_json := WebRequest.ResponseText
 			WebRequest = ""
@@ -256,7 +257,7 @@ picture_get_timestamp(filename)
 {
 	http_path = http://www.dmxcontrol.de/mediawiki/api.php?format=json&action=query&titles=File:%filename%&prop=revisions|info&rvprop=timestamp
 	
-	if(!debug)
+	if(!debug_internet)
 	{
 		WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 		WebRequest.Open("GET", http_path)
@@ -268,9 +269,9 @@ picture_get_timestamp(filename)
 	}
 
 
-	if(WebRequest.Status == 200 || debug)
+	if(WebRequest.Status == 200 || debug_internet)
 	{
-		if(!debug)
+		if(!debug_internet)
 		{
 			picture_json := WebRequest.ResponseText
 			WebRequest = ""
@@ -302,20 +303,20 @@ picture_get_timestamp(filename)
 
 software_list_get()
 {
-	global software_list, software_date, debug
+	global software_list, software_date, debug_internet
 	
 	http_path = http://www.dmxcontrol.de/mediawiki/api.php?format=json&action=query&titles=Liste DMXControl Versionen&prop=revisions|info&rvprop=content
 	
-	if(!debug)
+	if(!debug_internet)
 	{
 		WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 		WebRequest.Open("GET", http_path)
 		WebRequest.Send()
 	}
 
-	if(WebRequest.Status == 200 || debug)
+	if(WebRequest.Status == 200 || debug_internet)
 	{
-		if(!debug)
+		if(!debug_internet)
 		{
 			json := WebRequest.ResponseText
 			WebRequest = ""
@@ -513,21 +514,26 @@ Windows_Firewall_RemoveDMXControl()
 }
 
 RunAsAdmin() {
-  Loop, %0%  ; For each parameter:
-    {
-      param := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.
-      params .= A_Space . param
-    }
-  ShellExecute := A_IsUnicode ? "shell32\ShellExecute":"shell32\ShellExecuteA"
-      
-  if not A_IsAdmin
-  {
-      If A_IsCompiled
-         DllCall(ShellExecute, uint, 0, str, "RunAs", str, A_ScriptFullPath, str, params , str, A_WorkingDir, int, 1)
-      Else
-         DllCall(ShellExecute, uint, 0, str, "RunAs", str, A_AhkPath, str, """" . A_ScriptFullPath . """" . A_Space . params, str, A_WorkingDir, int, 1)
-      ExitApp
-  }
+	global skip_intensive_windows_stuff
+	
+	if(skip_intensive_windows_stuff)
+		return
+	
+	Loop, %0%  ; For each parameter:
+	{
+		param := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.
+		params .= A_Space . param
+	}
+	ShellExecute := A_IsUnicode ? "shell32\ShellExecute":"shell32\ShellExecuteA"
+
+	if not A_IsAdmin
+	{
+		If A_IsCompiled
+			DllCall(ShellExecute, uint, 0, str, "RunAs", str, A_ScriptFullPath, str, params , str, A_WorkingDir, int, 1)
+		Else
+			DllCall(ShellExecute, uint, 0, str, "RunAs", str, A_AhkPath, str, """" . A_ScriptFullPath . """" . A_Space . params, str, A_WorkingDir, int, 1)
+		ExitApp
+	}
 }
 
 Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename without extension
@@ -543,6 +549,34 @@ Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename w
 	Gdip_DisposeImage(pBitmap)
 }
 
+Take_Screenshot_Window(windowname, filename)
+{
+	WinGetPos, pos_x, pos_y, pos_width, pos_height, %windowname%
+	
+	if(pos_x = "")
+	{
+		MsgBox, 16, program, Couldn't find window %windowname%, so couldn't take screenshot
+		return false
+	}
+	
+	return Gdip_Take_Screenshot(pos_x - 7, pos_y - 7, pos_width + 7 + 9, pos_height + 7 + 9, filename)
+	
+}
+
+Take_Screenshot_Windowpart(windowname, rel_pos_x, rel_pos_y, rel_width, rel_height, filename)
+{
+	WinGetPos, pos_x, pos_y, pos_width, pos_height, %windowname%
+	
+	if(pos_x = "")
+	{
+		MsgBox, 16, program, Couldn't find window %windowname%, so couldn't take screenshot
+		return false
+	}
+	
+	return Gdip_Take_Screenshot(pos_x + rel_pos_x, pos_y + rel_pos_y, rel_width, rel_height, filename)
+	
+}
+
 Windows_HideDesktopIcons(hide_them)
 {
 	ControlGet, HWND, Hwnd,, SysListView321, ahk_class Progman
@@ -556,6 +590,11 @@ Windows_HideDesktopIcons(hide_them)
 
 Windows_prepare_style(startup)
 {
+	global skip_intensive_windows_stuff
+	
+	if(skip_intensive_windows_stuff)
+		return
+	
 	if(startup)
 	{
 		Run, include\DMXC2_Manual_Manual_WindowsDesign.themepack
