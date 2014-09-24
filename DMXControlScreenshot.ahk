@@ -537,7 +537,7 @@ Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename w
 	pBitmap := Gdip_BitmapFromScreen(pos_x . "|" . pos_y . "|" . pos_width . "|" . pos_height, "")
 	
 	FileCreateDir, screenshots
-	FileDelete, "screenshots\" . filename . ".png"
+	FileDelete, screenshots\%filename%.png
 	Gdip_SaveBitmapToFile(pBitmap, "screenshots\" . filename . ".png")
 
 	Gdip_DisposeImage(pBitmap)
