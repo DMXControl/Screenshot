@@ -141,7 +141,7 @@ pictures_list_get()
 
 	if(debug_internet)
 	{
-		pictures_json = {"query":{"pages":{"3375":{"pageid":3375,"ns":0,"title":"Liste DMXControl 3 Handbuch Bilder","revisions":[{"*":"Diese Seite stellt eine \u00dcbersicht <!-- aller --> der im DMXControl 3 Dokumentation verwendeten Bilder dar.\n\n= DMXControl 3.0 Lumos =\n== Tutorial ==\n=== Lektion 3 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L02_PanelAssignment.jpg\nDatei:DMXC30_WindowsManager3.JPG\n<\/gallery>\n\n\n== Handbuch ==\n=== Wrong entry ==="}],"touched":"2014-09-08T12:25:34Z","lastrevid":11974,"counter":7,"length":290}}}}
+		pictures_json = {"query":{"pages":{"3375":{"pageid":3375,"ns":0,"title":"Liste DMXControl 3 Handbuch Bilder","revisions":[{"*":"Diese Seite stellt eine Übersicht <!-- aller --> der im DMXControl 3 Dokumentation verwendeten Bilder dar.\n\n= DMXControl 3.0 Lumos =\n== Tutorial ==\n=== Lektion 1 ===\n<gallery mode=packed-hover>\nDatei:DMXC3_Overview.jpg\nDatei:DMXC3L01_kernel.JPG\nDatei:DMXC3L01_konsole.JPG\nDatei:DMXC3L01_connect.JPG\nDatei:DMXC3_Tutorial_Lektion1_Firewall.png\n<\/gallery>\n=== Lektion 2 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L02_PanelAssignment.jpg\nDatei:DMXC30_WindowsManager3.JPG\n<\/gallery>\n=== Lektion 3 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L03_projectExplorer.JPG\nDatei:DMXC3L03_createDevice.JPG\nDatei:DMXC3L03_createDeviceGroup.JPG\n<\/gallery>\n=== Lektion 4 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L04_liveView.JPG\nDatei:DMXC3L04_liveView_groups.jpg\n<\/gallery>\n=== Lektion 5 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L05_propertyPanels.JPG\nDatei:DMXC3L05_propertyTS.JPG\nDatei:DMXC3L05_propertyRGBParColor.jpg\nDatei:DMXC3L05_propertyMix.JPG\nDatei:DMXC3L05_PropertyGroupHandling.jpg\n<\/gallery>\n=== Lektion 6 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L06_AddInterface.JPG\nDatei:DMXC3L06_DE_IF_plugin_settings.JPG\n<\/gallery>\n=== Lektion 7 ===\n<gallery mode=packed-hover>\nDatei:DMXC3L07_AffinityView.JPG\nDatei:DMXC3L07_ProjectExplorerMenues.JPG\nDatei:DMXC3L07_channelOverview.JPG\n<\/gallery>\n\n== Handbuch ==\n"}],"touched":"2014-09-08T12:25:34Z","lastrevid":11974,"counter":7,"length":290}}}}
 	}
 	else
 	{
@@ -255,6 +255,8 @@ pictures_list_images()
 
 picture_get_timestamp(filename)
 {
+	global debug_internet
+	
 	http_path = http://www.dmxcontrol.de/mediawiki/api.php?format=json&action=query&titles=File:%filename%&prop=revisions|info&rvprop=timestamp
 	
 	if(!debug_internet)
