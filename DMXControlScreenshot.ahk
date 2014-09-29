@@ -3,11 +3,13 @@
 #CommentFlag ;
 #include include\lib_GuiButtonIcon.ahk
 #include include\lib_Gdip.ahk
+#include include\lib_DMXControl_screenshotfunctions.ahk
 #singleinstance force 
 
 PROGRAMNAME = DMXControl Screenshot
 debug_internet := false
 skip_intensive_windows_stuff := false
+use_running_dmxcontrol := false
 
 Menu, Tray, Icon, include\DMXControlScreenshot.dll, 1
 
@@ -88,9 +90,10 @@ UpdateImage:
 	selected_image := A_GuiControl
 	gui, Destroy
 	
-	MsgBox % "Logic missing for auto generate image " . selected_image
+	if(!DMXControl_generate_image(selected_image))
+		MsgBox % "Logic missing for auto generate image " . selected_image . " or other error hapened" ; TODO be more specific
 	
-	Goto Exit
+	Goto SelectCategory
 return
 
 OpenWikiFile:
@@ -381,7 +384,7 @@ software_version_assume(software, version, filedate)
 
 environment_prepare(startup)
 {
-	global PROGRAMNAME, GdipToken
+	global PROGRAMNAME, GdipToken, use_running_dmxcontrol
 	
 	if(startup)
 	{
@@ -391,7 +394,7 @@ environment_prepare(startup)
 			ExitApp
 		}
 		
-		while(DMXControl_running())
+		while(DMXControl_running() && !use_running_dmxcontrol)
 		{
 			MsgBox, 6, %PROGRAMNAME%, You have an instance of DMXControl 3 running.`nIt has to be closed before we can continue!, 10
 			IfMsgBox Cancel
@@ -399,21 +402,29 @@ environment_prepare(startup)
 			IfMsgBox Continue
 				break
 		}
-		If(DMXControl_running())
+		If(DMXControl_running() && !use_running_dmxcontrol)
 		{
 			DMXControl_close()
 		}
 		
-		FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, R
+		if(!use_running_dmxcontrol)
+			FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, R
+
+		SendInput, {LWin Down}d{LWin Up} ; show desktop, so we don't have so many cluttered windows
 	}
 	else
 	{
-		FileRemoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, 1
-		FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, %A_AppData%\DMXControl Projects e.V\DMXControl\, R 
+		if(!use_running_dmxcontrol)
+		{
+			DMXControl_close()
+			
+			FileRemoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl\, 1
+			FileMoveDir, %A_AppData%\DMXControl Projects e.V\DMXControl_Screenshot_saved\, %A_AppData%\DMXControl Projects e.V\DMXControl\, R 
+		}
 		Gdip_Shutdown(pToken)
 
 	}
-	
+		
 	Windows_prepare_style(startup)
 }
 DMXControl_running()
@@ -444,7 +455,7 @@ DMXControl_close()
 		Process, WaitClose, Lumos.exe, 15
 	}
 }
-DMXControl_start_kernel()
+DMXControl_start_kernel(skip_question_window = false)
 {
 	global PROGRAMNAME, config_dmxcontrol_path
 	
@@ -457,13 +468,16 @@ DMXControl_start_kernel()
 	Run, %config_dmxcontrol_path%\Kernel\Lumos.exe
 	WinWait, DMXControl Kernel, , 60
 	WinActivate, DMXControl Kernel
-	; TODO: Position window accordingly
+	WinMove, , , 20, 20
 	
-	MsgBox, 33, %PROGRAMNAME%, Please press OK if Kernel is fully started up. ; sadly can't do that automatically
-	IfMsgBox OK
-		return true
-	else
-		return false
+	if(!skip_question_window)
+	{
+		MsgBox, 33, %PROGRAMNAME%, Please press OK if kernel is fully started up.`n (GoboAfinity-Thread finished message usually is last one) ; sadly can't do that automatically
+		IfMsgBox OK
+			return true
+		else
+			return false
+	}
 }
 
 DMXControl_start_gui()
@@ -512,7 +526,12 @@ Check_OS(required_os, force) ; allowed values: WIN_7, WIN_8, WIN_8.1, WIN_VISTA,
 Windows_Firewall_RemoveDMXControl()
 {
 	Run, netsh advfirewall firewall delete rule name="DMXControl 3 Kernel"
-	Run, netsh advfirewall firewall delete rule name="DMXControl 3 GUI"
+	WinWaitActive, ahk_class ConsoleWindowClass, , 10
+	WinWaitClose, , 15
+	
+	;Run, netsh advfirewall firewall delete rule name="DMXControl 3 GUI"
+	;WinWaitActive, ahk_class ConsoleWindowClass, , 10
+	;WinWaitClose, , 15
 }
 
 RunAsAdmin() {
@@ -552,26 +571,41 @@ Gdip_Take_Screenshot(pos_x, pos_y, pos_width, pos_height, filename) ; filename w
 }
 
 Take_Screenshot_Window(windowname, filename)
-{
+{	; moves window to foreground to capture it
+	global PROGRAMNAME
+	
+	WinMove, %windowname%, , 20, 20
 	WinGetPos, pos_x, pos_y, pos_width, pos_height, %windowname%
 	
 	if(pos_x = "")
 	{
-		MsgBox, 16, program, Couldn't find window %windowname%, so couldn't take screenshot
+		MsgBox, 16, %PROGRAMNAME%, Couldn't find window %windowname%, so couldn't take screenshot
 		return false
 	}
 	
-	return Gdip_Take_Screenshot(pos_x - 7, pos_y - 7, pos_width + 7 + 9, pos_height + 7 + 9, filename)
+	SendInput, {LWin Down}d{LWin Up} ; show desktop
 	
+	WinWaitActive, ahk_class WorkerW, , 10 ; wait for the desktop to show
+		
+	WinActivate, %windowname%
+	WinWaitActive, %windowname%, , 10
+	
+	screenshot_taken := Gdip_Take_Screenshot(pos_x - 7, pos_y - 7, pos_width + 7 + 9, pos_height + 7 + 9, filename)
+	
+	WinActivate, %PROGRAMNAME%
+	
+	return screenshot_taken	
 }
 
 Take_Screenshot_Windowpart(windowname, rel_pos_x, rel_pos_y, rel_width, rel_height, filename)
-{
+{	; window already has to be in foreground!
+	global PROGRAMNAME
+	
 	WinGetPos, pos_x, pos_y, pos_width, pos_height, %windowname%
 	
 	if(pos_x = "")
 	{
-		MsgBox, 16, program, Couldn't find window %windowname%, so couldn't take screenshot
+		MsgBox, 16, %PROGRAMNAME%, Couldn't find window %windowname%, so couldn't take screenshot
 		return false
 	}
 	
@@ -605,6 +639,10 @@ Windows_prepare_style(startup)
 	{
 		Run, include\Windows 7 default.themepack
 	}
+
+	WinWaitActive, ahk_class CabinetWClass, , 30 ; waiting for style manager to show
+	Sleep, 5000 ; give him five seconds to do his job
+	WinClose ; and close him
 
 	Windows_HideDesktopIcons(startup)
 }
