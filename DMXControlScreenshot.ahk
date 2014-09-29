@@ -33,6 +33,7 @@ pictures_list_get()
 goto SelectCategory
 
 Exit:
+gui, Destroy
 environment_prepare(false)
 ExitApp
 

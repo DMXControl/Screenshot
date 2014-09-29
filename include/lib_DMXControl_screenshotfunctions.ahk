@@ -8,6 +8,8 @@
 	{
 		if(Check_OS("WIN_7", false))
 		{
+			windowname = DMXControl Kernel
+			
 			DMXControl_start_kernel()
 			Take_Screenshot_Window(windowname, image)
 			
