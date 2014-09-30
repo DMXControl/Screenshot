@@ -591,6 +591,8 @@ Take_Screenshot_Window(windowname, filename)
 	WinActivate, %windowname%
 	WinWaitActive, %windowname%, , 10
 	
+	Click pos_x - 1, pos_y - 1 ; deactivate window
+	
 	screenshot_taken := Gdip_Take_Screenshot(pos_x - 7, pos_y - 7, pos_width + 7 + 9, pos_height + 7 + 9, filename)
 	
 	WinActivate, %PROGRAMNAME%
