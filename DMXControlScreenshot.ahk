@@ -481,7 +481,7 @@ DMXControl_start_kernel(skip_question_window = false)
 	}
 }
 
-DMXControl_start_gui()
+DMXControl_start_gui(connect_screen = false)
 {
 	global PROGRAMNAME, config_dmxcontrol_path
 	
@@ -491,12 +491,23 @@ DMXControl_start_gui()
 		return true
 	}
 	
-	Run, %config_dmxcontrol_path%\GUI\LumosGUI.exe -nonetwork
-	WinWait, DMXControl 3, , 60
-	WinActivate, DMXControl 3
-	; TODO: Position window accordingly
+	if(connect_screen)
+		Run, %config_dmxcontrol_path%\GUI\LumosGUI.exe
+	else
+		Run, %config_dmxcontrol_path%\GUI\LumosGUI.exe -nonetwork
 	
-	MsgBox Done
+	WinWait, LumosSplashScreen, , 15
+	
+	WinWaitClose, LumosSplashScreen, , 180
+	
+	if(connect_screen)
+	{
+		WinWait, Connect to DMXControl Server, , 60
+	}
+	else
+	{
+		WinWait, DMXControl 3, , 60
+	}
 	
 	return true
 }
@@ -611,6 +622,11 @@ Take_Screenshot_Windowpart(windowname, rel_pos_x, rel_pos_y, rel_width, rel_heig
 		MsgBox, 16, %PROGRAMNAME%, Couldn't find window %windowname%, so couldn't take screenshot
 		return false
 	}
+	
+	if(rel_pos_x < 0)
+		rel_pos_x := pos_width + rel_pos_x
+	if(rel_pos_y < 0)
+		rel_pos_y := pos_height + rel_pos_y
 	
 	return Gdip_Take_Screenshot(pos_x + rel_pos_x, pos_y + rel_pos_y, rel_width, rel_height, filename)
 	
