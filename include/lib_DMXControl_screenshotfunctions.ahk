@@ -1,5 +1,7 @@
 ﻿DMXControl_generate_image(image)
 {
+	global PROGRAMNAME
+	
 	extension_pos := InStr(image, ".", false, -1)
 	
 	image := SubStr(image, 1, extension_pos - 1)
@@ -61,6 +63,39 @@
 			
 			return true
 		}
+		else
+			return false
+	}
+	else if(image == "DMXC3L01_connect")
+	{
+		windowname = Connect to DMXControl Server
+		
+		DMXControl_start_kernel()
+		DMXControl_start_gui(true)
+		
+		Sleep, 10000 ; hopefully wait for current running server to appear in found servers list
+		
+		Take_Screenshot_Window(windowname, image)
+		
+		WinActivate, %windowname%
+		CoordMode, Mouse, Window
+		Click, 330, 300 ; Connect
+		;Click, 410, 300 ; Cancel
+		CoordMode, Mouse, Screen
+		
+		image = DMXC3L01_connected
+		windowname = DMXControl 3
+		
+		WinWaitActive, %windowname%, , 180
+		Take_Screenshot_Windowpart(windowname, -70, -30, 70, 30, image)
+		
+		return true
+	}
+	else if(image == "DMXC3L01_connected")
+	{
+		MsgBox, 36, %PROGRAMNAME%, This picture is automatically generated`, when picture DMXC3L01_connect´is taken.`nGenerate these two pictures now?
+		IfMsgBox, Yes
+			return DMXControl_generate_image("DMXC3L01_connect")
 		else
 			return false
 	}
